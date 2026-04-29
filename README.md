@@ -12,7 +12,7 @@ Primary take-home goal: a reviewer should be able to clone the repo, run one com
 
 ### Clone repo
 ```bash
-git clone https://github.com/christianrincon/task-manager-ai-api
+git clone https://github.com/ChrisRin08/task-manager-ai-api
 cd task-manager-ai-api
 ```
 
@@ -74,6 +74,12 @@ Notes:
 - If `GEMINI_API_KEY` is missing, invalid, quota-limited, or Gemini fails, the app uses `LocalFallbackAiClient`.
 - AI suggestions are not automatically saved to the database.
 
+
+Basicallyif no GEMINI_API_KEY is configured, the app automatically uses a built-in
+local fallback that still returns fully structured JSON responses for all
+three AI endpoints. No setup is required to explore the AI features —
+just run the app and they work out of the box.
+
 Additional AI endpoints:
 - `POST /tasks/{id}/summarize`
 - `POST /tasks/{id}/breakdown`
@@ -123,9 +129,3 @@ AI was used to help design, implement, review, debug, and test the project in in
 - exception handling
 - AI integration design with fallback
 - test coverage and review readiness
-
-## 10. Future Improvements
-- Add pagination/filtering for large task lists
-- Add authentication/authorization
-- Add CI workflow and quality checks
-- Add containerization for deployment environments
