@@ -118,4 +118,51 @@ class GeminiAiClientTest {
 
         assertNull(suggestion.getDueDate());
     }
+
+    @Test
+    void normalizePastDueDate_shouldSetDueDateToNullWhenDueDateIsYesterday() {
+        LocalFallbackAiClient fallbackAiClient = spy(new LocalFallbackAiClient());
+        GeminiAiClient geminiAiClient = new GeminiAiClient(
+                "fake-key",
+                "gemini-2.5-flash-lite",
+                fallbackAiClient,
+                new ObjectMapper()
+        );
+
+        AiSuggestResponse suggestion = new AiSuggestResponse(
+                "Submit project",
+                "Submit the internship project.",
+                LocalDate.now().minusDays(1),
+                Priority.HIGH,
+                Status.TODO
+        );
+
+        geminiAiClient.normalizePastDueDate(suggestion);
+
+        assertNull(suggestion.getDueDate());
+    }
+
+    @Test
+    void normalizePastDueDate_shouldLeaveDueDateUnchangedWhenDueDateIsTomorrow() {
+        LocalFallbackAiClient fallbackAiClient = spy(new LocalFallbackAiClient());
+        GeminiAiClient geminiAiClient = new GeminiAiClient(
+                "fake-key",
+                "gemini-2.5-flash-lite",
+                fallbackAiClient,
+                new ObjectMapper()
+        );
+
+        LocalDate tomorrow = LocalDate.now().plusDays(1);
+        AiSuggestResponse suggestion = new AiSuggestResponse(
+                "Submit project",
+                "Submit the internship project.",
+                tomorrow,
+                Priority.HIGH,
+                Status.TODO
+        );
+
+        geminiAiClient.normalizePastDueDate(suggestion);
+
+        assertEquals(tomorrow, suggestion.getDueDate());
+    }
 }

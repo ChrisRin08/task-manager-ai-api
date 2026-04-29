@@ -12,7 +12,7 @@ Primary take-home goal: a reviewer should be able to clone the repo, run one com
 
 ### Clone repo
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/christianrincon/task-manager-ai-api
 cd task-manager-ai-api
 ```
 
