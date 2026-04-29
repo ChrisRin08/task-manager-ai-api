@@ -3,7 +3,6 @@ package com.eulerity.task_manager.service;
 import com.eulerity.task_manager.dto.AiSuggestResponse;
 import com.eulerity.task_manager.model.Priority;
 import com.eulerity.task_manager.model.Status;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -13,12 +12,6 @@ import java.util.Locale;
 
 @Service
 public class LocalFallbackAiClient implements AiClient {
-
-    private final String apiKey;
-
-    public LocalFallbackAiClient(@Value("${OPENAI_API_KEY:}") String apiKey) {
-        this.apiKey = apiKey;
-    }
 
     @Override
     public AiSuggestResponse suggestTask(String prompt) {
@@ -31,10 +24,6 @@ public class LocalFallbackAiClient implements AiClient {
 
         if (title.isBlank()) {
             title = "New Task";
-        }
-
-        if (!apiKey.isBlank()) {
-            description = description + " (Generated with local fallback)";
         }
 
         return new AiSuggestResponse(
