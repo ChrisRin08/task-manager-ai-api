@@ -21,6 +21,16 @@ cd task-manager-ai-api
 ./mvnw spring-boot:run
 ```
 
+### Optional Gemini setup
+No real API key is committed to this repository.
+
+To enable real Gemini responses:
+```bash
+export GEMINI_API_KEY="your_gemini_api_key_here"
+export GEMINI_MODEL="gemini-2.5-flash-lite"
+./mvnw spring-boot:run
+```
+
 ### App URL
 - API + UI: `http://localhost:8081`
 
@@ -54,16 +64,6 @@ curl -X POST http://localhost:8081/tasks/suggest \
   "priority": "HIGH",
   "status": "TODO"
 }
-```
-
-### Optional Gemini setup
-No real API key is committed to this repository.
-
-To enable real Gemini responses:
-```bash
-export GEMINI_API_KEY="your_gemini_api_key_here"
-export GEMINI_MODEL="gemini-2.5-flash-lite"
-./mvnw spring-boot:run
 ```
 
 Notes:

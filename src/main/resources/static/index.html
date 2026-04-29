@@ -103,6 +103,12 @@
             filter: brightness(0.98);
         }
 
+        .button-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+        }
+
         .message {
             margin: 10px 0 0;
             min-height: 20px;
@@ -145,6 +151,15 @@
             margin: 4px 0 0;
         }
 
+        .result ol {
+            margin: 6px 0 0 20px;
+            padding: 0;
+        }
+
+        .result li {
+            margin: 4px 0;
+        }
+
         .table-wrap {
             overflow-x: auto;
         }
@@ -170,12 +185,21 @@
             letter-spacing: 0.03em;
             color: #46505c;
         }
+
+        .table-action-button {
+            width: auto;
+            margin-top: 0;
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: var(--danger);
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
 <main class="page">
     <h1 class="title">Task Manager API Demo</h1>
-    <p class="subtitle">Simple frontend for task CRUD and AI suggestion.</p>
+    <p class="subtitle">Christian Rincon -- Task Project</p>
 
     <section class="grid">
         <article class="card">
@@ -245,6 +269,41 @@
                 </dl>
             </div>
         </article>
+
+        <article class="card">
+            <h2>AI Task Tools</h2>
+            <label>
+                Task ID
+                <input id="ai-task-id" type="number" min="1" step="1" placeholder="Enter a saved task ID">
+            </label>
+
+            <div class="button-row">
+                <button id="summarize-task-button" type="button">Summarize Task</button>
+                <button id="breakdown-task-button" type="button">Break Down Task</button>
+            </div>
+
+            <p id="ai-tools-message" class="message"></p>
+
+            <div id="summary-result" class="result hidden">
+                <dl>
+                    <dt>Task ID</dt>
+                    <dd id="summary-task-id"></dd>
+                    <dt>Summary</dt>
+                    <dd id="summary-text"></dd>
+                </dl>
+            </div>
+
+            <div id="breakdown-result" class="result hidden">
+                <dl>
+                    <dt>Task ID</dt>
+                    <dd id="breakdown-task-id"></dd>
+                    <dt>Subtasks</dt>
+                    <dd>
+                        <ol id="breakdown-subtasks"></ol>
+                    </dd>
+                </dl>
+            </div>
+        </article>
     </section>
 
     <section class="card">
@@ -261,6 +320,7 @@
                     <th>Due Date</th>
                     <th>Priority</th>
                     <th>Status</th>
+                    <th>Actions</th>
                 </tr>
                 </thead>
                 <tbody id="tasks-body"></tbody>
@@ -275,6 +335,12 @@
     const refreshButton = document.getElementById("refresh-button");
     const tasksBody = document.getElementById("tasks-body");
     const aiResult = document.getElementById("ai-result");
+    const aiTaskIdInput = document.getElementById("ai-task-id");
+    const summarizeTaskButton = document.getElementById("summarize-task-button");
+    const breakdownTaskButton = document.getElementById("breakdown-task-button");
+    const summaryResult = document.getElementById("summary-result");
+    const breakdownResult = document.getElementById("breakdown-result");
+    const breakdownSubtasksList = document.getElementById("breakdown-subtasks");
 
     function setMessage(elementId, text, type) {
         const element = document.getElementById(elementId);
@@ -301,13 +367,86 @@
         return value ? value : "-";
     }
 
+    function clearAiTaskToolResults() {
+        summaryResult.classList.add("hidden");
+        breakdownResult.classList.add("hidden");
+        breakdownSubtasksList.innerHTML = "";
+    }
+
+    function getTaskIdForAiTools() {
+        const rawValue = aiTaskIdInput.value.trim();
+        if (!rawValue) {
+            setMessage("ai-tools-message", "Task ID is required.", "error");
+            return null;
+        }
+
+        const taskId = Number(rawValue);
+        if (!Number.isInteger(taskId) || taskId <= 0) {
+            setMessage("ai-tools-message", "Task ID must be a positive whole number.", "error");
+            return null;
+        }
+        return taskId;
+    }
+
+    async function callAiTaskTool(action) {
+        clearAiTaskToolResults();
+        const taskId = getTaskIdForAiTools();
+        if (taskId === null) {
+            return;
+        }
+
+        const loadingMessage = action === "summarize" ? "Generating summary..." : "Generating subtask breakdown...";
+        setMessage("ai-tools-message", loadingMessage);
+
+        try {
+            const response = await fetch(`/tasks/${taskId}/${action}`, {method: "POST"});
+            if (!response.ok) {
+                throw new Error(await parseError(response));
+            }
+
+            const result = await response.json();
+            if (action === "summarize") {
+                document.getElementById("summary-task-id").textContent = formatText(result.taskId);
+                document.getElementById("summary-text").textContent = formatText(result.summary);
+                summaryResult.classList.remove("hidden");
+                setMessage("ai-tools-message", "Summary generated.", "success");
+                return;
+            }
+
+            document.getElementById("breakdown-task-id").textContent = formatText(result.taskId);
+            (result.subtasks || []).forEach((subtask) => {
+                const item = document.createElement("li");
+                item.textContent = subtask;
+                breakdownSubtasksList.appendChild(item);
+            });
+            breakdownResult.classList.remove("hidden");
+            setMessage("ai-tools-message", "Subtask breakdown generated.", "success");
+        } catch (error) {
+            setMessage("ai-tools-message", error.message, "error");
+        }
+    }
+
+    async function deleteTask(taskId) {
+        setMessage("tasks-message", "Deleting task...");
+        try {
+            const response = await fetch(`/tasks/${taskId}`, {method: "DELETE"});
+            if (!response.ok) {
+                throw new Error(await parseError(response));
+            }
+            await loadTasks();
+            setMessage("tasks-message", `Task ${taskId} deleted successfully.`, "success");
+        } catch (error) {
+            setMessage("tasks-message", error.message, "error");
+        }
+    }
+
     function renderTasks(tasks) {
         tasksBody.innerHTML = "";
 
         if (!Array.isArray(tasks) || tasks.length === 0) {
             const row = document.createElement("tr");
             const cell = document.createElement("td");
-            cell.colSpan = 6;
+            cell.colSpan = 7;
             cell.textContent = "No tasks yet.";
             row.appendChild(cell);
             tasksBody.appendChild(row);
@@ -330,6 +469,16 @@
                 cell.textContent = value;
                 row.appendChild(cell);
             });
+
+            const actionCell = document.createElement("td");
+            const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
+            deleteButton.textContent = "Delete";
+            deleteButton.className = "table-action-button";
+            deleteButton.addEventListener("click", () => deleteTask(task.id));
+            actionCell.appendChild(deleteButton);
+            row.appendChild(actionCell);
+
             tasksBody.appendChild(row);
         });
     }
@@ -415,6 +564,8 @@
         }
     });
 
+    summarizeTaskButton.addEventListener("click", () => callAiTaskTool("summarize"));
+    breakdownTaskButton.addEventListener("click", () => callAiTaskTool("breakdown"));
     refreshButton.addEventListener("click", loadTasks);
 
     // Load existing tasks when the page opens.

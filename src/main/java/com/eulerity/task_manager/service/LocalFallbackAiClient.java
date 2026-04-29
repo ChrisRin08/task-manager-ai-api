@@ -1,6 +1,9 @@
 package com.eulerity.task_manager.service;
 
 import com.eulerity.task_manager.dto.AiSuggestResponse;
+import com.eulerity.task_manager.dto.TaskBreakdownResponse;
+import com.eulerity.task_manager.dto.TaskResponse;
+import com.eulerity.task_manager.dto.TaskSummaryResponse;
 import com.eulerity.task_manager.model.Priority;
 import com.eulerity.task_manager.model.Status;
 import org.springframework.stereotype.Service;
@@ -8,6 +11,8 @@ import org.springframework.stereotype.Service;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 @Service
@@ -33,6 +38,27 @@ public class LocalFallbackAiClient implements AiClient {
                 priority,
                 Status.TODO
         );
+    }
+
+    @Override
+    public TaskSummaryResponse summarizeTask(TaskResponse task) {
+        String dueDateText = task.getDueDate() != null ? task.getDueDate().toString() : "no specific due date";
+        String summary = "This task is about " + safeText(task.getTitle()).toLowerCase(Locale.ROOT)
+                + ". It has " + task.getPriority() + " priority, status " + task.getStatus()
+                + ", and due date " + dueDateText + ".";
+
+        return new TaskSummaryResponse(task.getId(), summary);
+    }
+
+    @Override
+    public TaskBreakdownResponse breakdownTask(TaskResponse task) {
+        List<String> subtasks = new ArrayList<>();
+        subtasks.add("Review task details: " + safeText(task.getTitle()));
+        subtasks.add("Break the task into smaller implementation steps");
+        subtasks.add("Complete the main work for the task");
+        subtasks.add("Test and verify the result");
+        subtasks.add("Mark the task status as updated");
+        return new TaskBreakdownResponse(task.getId(), subtasks);
     }
 
     private String extractTitle(String prompt) {
@@ -127,5 +153,12 @@ public class LocalFallbackAiClient implements AiClient {
             return "Task suggested from prompt.";
         }
         return "Task suggested from prompt: \"" + prompt + "\". Due by " + dueDate + ".";
+    }
+
+    private String safeText(String value) {
+        if (value == null || value.isBlank()) {
+            return "the task";
+        }
+        return value;
     }
 }
