@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager API Demo</title>
+    <style>
+        :root {
+            --bg-top: #f3f7ff;
+            --bg-bottom: #e8f4ec;
+            --card: #ffffff;
+            --ink: #1f2937;
+            --muted: #5b6472;
+            --line: #d9e0ea;
+            --primary: #14532d;
+            --primary-2: #1f7a44;
+            --danger: #b42318;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            color: var(--ink);
+            background: linear-gradient(160deg, var(--bg-top), var(--bg-bottom));
+            font-family: "Avenir Next", "Gill Sans", "Segoe UI", sans-serif;
+        }
+
+        .page {
+            max-width: 1100px;
+            margin: 28px auto 40px;
+            padding: 0 16px;
+        }
+
+        .title {
+            margin: 0 0 6px;
+            font-size: 2rem;
+            font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+            letter-spacing: 0.01em;
+        }
+
+        .subtitle {
+            margin: 0 0 20px;
+            color: var(--muted);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            box-shadow: 0 8px 30px rgba(16, 24, 40, 0.06);
+            padding: 16px;
+        }
+
+        .card h2 {
+            margin: 0 0 12px;
+            font-size: 1.2rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 0.92rem;
+            font-weight: 600;
+        }
+
+        input,
+        select,
+        textarea,
+        button {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            padding: 10px 12px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            margin-top: 6px;
+        }
+
+        textarea {
+            min-height: 86px;
+            resize: vertical;
+        }
+
+        button {
+            border: none;
+            color: #fff;
+            background: linear-gradient(145deg, var(--primary), var(--primary-2));
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        button:hover {
+            filter: brightness(0.98);
+        }
+
+        .message {
+            margin: 10px 0 0;
+            min-height: 20px;
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+
+        .message.error {
+            color: var(--danger);
+        }
+
+        .message.success {
+            color: var(--primary);
+        }
+
+        .result {
+            margin-top: 14px;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px dashed #c8d3e0;
+            background: #fafcff;
+        }
+
+        .result.hidden {
+            display: none;
+        }
+
+        .result dl {
+            margin: 0;
+        }
+
+        .result dt {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--muted);
+            margin-top: 8px;
+        }
+
+        .result dd {
+            margin: 4px 0 0;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.92rem;
+        }
+
+        th,
+        td {
+            text-align: left;
+            border-bottom: 1px solid var(--line);
+            padding: 10px 8px;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f8fbff;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #46505c;
+        }
+    </style>
+</head>
+<body>
+<main class="page">
+    <h1 class="title">Task Manager API Demo</h1>
+    <p class="subtitle">Simple frontend for task CRUD and AI suggestion.</p>
+
+    <section class="grid">
+        <article class="card">
+            <h2>Create Task</h2>
+            <form id="create-task-form">
+                <label>
+                    Title
+                    <input id="title" type="text" required>
+                </label>
+
+                <label>
+                    Description
+                    <textarea id="description"></textarea>
+                </label>
+
+                <label>
+                    Due Date
+                    <input id="dueDate" type="date">
+                </label>
+
+                <label>
+                    Priority
+                    <select id="priority" required>
+                        <option value="LOW">LOW</option>
+                        <option value="MEDIUM" selected>MEDIUM</option>
+                        <option value="HIGH">HIGH</option>
+                    </select>
+                </label>
+
+                <label>
+                    Status
+                    <select id="status" required>
+                        <option value="TODO" selected>TODO</option>
+                        <option value="IN_PROGRESS">IN_PROGRESS</option>
+                        <option value="DONE">DONE</option>
+                    </select>
+                </label>
+
+                <button type="submit">Create Task</button>
+                <p id="create-task-message" class="message"></p>
+            </form>
+        </article>
+
+        <article class="card">
+            <h2>AI Task Suggestion</h2>
+            <form id="ai-form">
+                <label>
+                    Prompt
+                    <textarea id="prompt" required placeholder="Example: remind me to submit my internship project before Friday"></textarea>
+                </label>
+                <button type="submit">Suggest Task</button>
+                <p id="ai-message" class="message"></p>
+            </form>
+
+            <div id="ai-result" class="result hidden">
+                <dl>
+                    <dt>Title</dt>
+                    <dd id="ai-title"></dd>
+                    <dt>Description</dt>
+                    <dd id="ai-description"></dd>
+                    <dt>Due Date</dt>
+                    <dd id="ai-dueDate"></dd>
+                    <dt>Priority</dt>
+                    <dd id="ai-priority"></dd>
+                    <dt>Status</dt>
+                    <dd id="ai-status"></dd>
+                </dl>
+            </div>
+        </article>
+    </section>
+
+    <section class="card">
+        <h2>Saved Tasks</h2>
+        <button id="refresh-button" type="button">Refresh Tasks</button>
+        <p id="tasks-message" class="message"></p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Due Date</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+                <tbody id="tasks-body"></tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<script>
+    const createTaskForm = document.getElementById("create-task-form");
+    const aiForm = document.getElementById("ai-form");
+    const refreshButton = document.getElementById("refresh-button");
+    const tasksBody = document.getElementById("tasks-body");
+    const aiResult = document.getElementById("ai-result");
+
+    function setMessage(elementId, text, type) {
+        const element = document.getElementById(elementId);
+        element.textContent = text || "";
+        element.classList.remove("error", "success");
+        if (type) {
+            element.classList.add(type);
+        }
+    }
+
+    async function parseError(response) {
+        try {
+            const json = await response.json();
+            if (json.message) {
+                return json.message;
+            }
+        } catch (e) {
+            // Ignore parse errors and return fallback below.
+        }
+        return "Request failed with status " + response.status;
+    }
+
+    function formatText(value) {
+        return value ? value : "-";
+    }
+
+    function renderTasks(tasks) {
+        tasksBody.innerHTML = "";
+
+        if (!Array.isArray(tasks) || tasks.length === 0) {
+            const row = document.createElement("tr");
+            const cell = document.createElement("td");
+            cell.colSpan = 6;
+            cell.textContent = "No tasks yet.";
+            row.appendChild(cell);
+            tasksBody.appendChild(row);
+            return;
+        }
+
+        tasks.forEach((task) => {
+            const row = document.createElement("tr");
+            const values = [
+                formatText(task.id),
+                formatText(task.title),
+                formatText(task.description),
+                formatText(task.dueDate),
+                formatText(task.priority),
+                formatText(task.status)
+            ];
+
+            values.forEach((value) => {
+                const cell = document.createElement("td");
+                cell.textContent = value;
+                row.appendChild(cell);
+            });
+            tasksBody.appendChild(row);
+        });
+    }
+
+    async function loadTasks() {
+        setMessage("tasks-message", "Loading tasks...");
+        try {
+            const response = await fetch("/tasks");
+            if (!response.ok) {
+                throw new Error(await parseError(response));
+            }
+            const tasks = await response.json();
+            renderTasks(tasks);
+            setMessage("tasks-message", "Tasks loaded.", "success");
+        } catch (error) {
+            setMessage("tasks-message", error.message, "error");
+        }
+    }
+
+    createTaskForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        setMessage("create-task-message", "Creating task...");
+
+        const payload = {
+            title: document.getElementById("title").value.trim(),
+            description: document.getElementById("description").value.trim(),
+            dueDate: document.getElementById("dueDate").value || null,
+            priority: document.getElementById("priority").value,
+            status: document.getElementById("status").value
+        };
+
+        try {
+            const response = await fetch("/tasks", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(await parseError(response));
+            }
+
+            createTaskForm.reset();
+            document.getElementById("priority").value = "MEDIUM";
+            document.getElementById("status").value = "TODO";
+            setMessage("create-task-message", "Task created successfully.", "success");
+            await loadTasks();
+        } catch (error) {
+            setMessage("create-task-message", error.message, "error");
+        }
+    });
+
+    aiForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        setMessage("ai-message", "Generating suggestion...");
+        aiResult.classList.add("hidden");
+
+        const payload = {
+            prompt: document.getElementById("prompt").value.trim()
+        };
+
+        try {
+            const response = await fetch("/tasks/suggest", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(await parseError(response));
+            }
+
+            const suggestion = await response.json();
+            document.getElementById("ai-title").textContent = formatText(suggestion.title);
+            document.getElementById("ai-description").textContent = formatText(suggestion.description);
+            document.getElementById("ai-dueDate").textContent = formatText(suggestion.dueDate);
+            document.getElementById("ai-priority").textContent = formatText(suggestion.priority);
+            document.getElementById("ai-status").textContent = formatText(suggestion.status);
+            aiResult.classList.remove("hidden");
+            setMessage("ai-message", "Suggestion generated.", "success");
+        } catch (error) {
+            setMessage("ai-message", error.message, "error");
+        }
+    });
+
+    refreshButton.addEventListener("click", loadTasks);
+
+    // Load existing tasks when the page opens.
+    loadTasks();
+</script>
+</body>
+</html>
