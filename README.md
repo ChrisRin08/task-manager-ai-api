@@ -1,153 +1,42 @@
 # task-manager-ai-api
 
 ## 1. Project Overview
-`task-manager-ai-api` is a Java 17 Spring Boot REST API for managing personal tasks.  
-It was built for a Backend Engineering Intern take-home assessment, with focus on clean layering, testability, and practical AI integration.
+`task-manager-ai-api` is a Java 17 Spring Boot REST API for a personal task manager.
 
-## 2. Features
-- Task CRUD API:
-  - `POST /tasks`
-  - `GET /tasks`
-  - `GET /tasks/{id}`
-  - `PUT /tasks/{id}`
-  - `DELETE /tasks/{id}`
-- AI-powered endpoints:
-  - `POST /tasks/suggest`
-  - `POST /tasks/{id}/summarize`
-  - `POST /tasks/{id}/breakdown`
-- Global exception handling with consistent JSON error responses
-- Simple browser UI for CRUD + AI actions at `http://localhost:8081`
-- H2 in-memory database and H2 console
+Primary take-home goal: a reviewer should be able to clone the repo, run one command, and have the API running locally.
 
-## 3. Tech Stack
+## 2. Quick Start
+### Prerequisites
 - Java 17
-- Spring Boot
-- Maven (Wrapper)
-- Spring Web
-- Spring Data JPA
-- H2 in-memory database
-- Bean Validation
-- JUnit 5
-- Mockito
-- MockMvc
-- Plain HTML/CSS/JavaScript frontend
-- Google Gemini API integration (optional at runtime)
+- Git
 
-## 4. Project Structure
-```text
-src/
-  main/
-    java/com/eulerity/task_manager/
-      controller/
-      dto/
-      exception/
-      model/
-      repository/
-      service/
-    resources/
-      application.properties
-      static/index.html
-  test/
-    java/com/eulerity/task_manager/
-      controller/
-      service/
-```
-
-## 5. Requirements
-- Java 17 installed
-- Internet only needed if you want real Gemini responses
-- No API key is required for local fallback mode
-
-## 6. How to Run the Project
+### Clone repo
 ```bash
 git clone <your-repo-url>
 cd task-manager-ai-api
-./mvnw spring-boot:run
 ```
 
-App URL: `http://localhost:8081`
-
-## 7. Optional Gemini Setup
-No real API key is committed in this repository.
-
-To enable real Gemini responses:
+### Run with one command
 ```bash
-export GEMINI_API_KEY="your_gemini_api_key_here"
-export GEMINI_MODEL="gemini-2.5-flash-lite"
 ./mvnw spring-boot:run
 ```
 
-Notes:
-- `GEMINI_MODEL` is optional.
-- If `GEMINI_API_KEY` is missing or Gemini fails (invalid key, quota, provider error, invalid AI response), the app automatically falls back to `LocalFallbackAiClient`.
+### App URL
+- API + UI: `http://localhost:8081`
 
-## 8. How to Run Tests
+## 3. How to Run Tests
 ```bash
 ./mvnw test
 ```
 
-## 9. H2 Database Console
-- URL: `http://localhost:8081/h2-console`
-- JDBC URL: `jdbc:h2:mem:taskdb`
-- Username: `sa`
-- Password: *(leave blank)*
+## 4. AI-Powered Endpoint
+### Description
+Main AI endpoint:
+- `POST /tasks/suggest`
 
-## 10. API Endpoints
-| Method | Endpoint | Purpose |
-|---|---|---|
-| POST | `/tasks` | Create task |
-| GET | `/tasks` | List all tasks |
-| GET | `/tasks/{id}` | Get single task |
-| PUT | `/tasks/{id}` | Update task |
-| DELETE | `/tasks/{id}` | Delete task |
-| POST | `/tasks/suggest` | AI task suggestion from prompt |
-| POST | `/tasks/{id}/summarize` | AI summary of existing task |
-| POST | `/tasks/{id}/breakdown` | AI subtask breakdown of existing task |
+It accepts a plain-language prompt and returns a structured task object.
 
-## 11. Task CRUD Examples
-### Create task
-```bash
-curl -X POST http://localhost:8081/tasks \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Finish internship project",
-    "description": "Complete the backend API, tests, AI integration, and README",
-    "dueDate": "2026-05-01",
-    "priority": "HIGH",
-    "status": "TODO"
-  }'
-```
-
-### Get all tasks
-```bash
-curl http://localhost:8081/tasks
-```
-
-### Get one task
-```bash
-curl http://localhost:8081/tasks/1
-```
-
-### Update task
-```bash
-curl -X PUT http://localhost:8081/tasks/1 \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Finish internship project (updated)",
-    "description": "Finalize and submit",
-    "dueDate": "2026-05-02",
-    "priority": "HIGH",
-    "status": "IN_PROGRESS"
-  }'
-```
-
-### Delete task
-```bash
-curl -X DELETE http://localhost:8081/tasks/1
-```
-
-## 12. AI Endpoint Examples
-### Suggest task from prompt
+### Example request
 ```bash
 curl -X POST http://localhost:8081/tasks/suggest \
   -H "Content-Type: application/json" \
@@ -156,7 +45,7 @@ curl -X POST http://localhost:8081/tasks/suggest \
   }'
 ```
 
-Example response:
+### Example response
 ```json
 {
   "title": "Submit internship project",
@@ -167,54 +56,76 @@ Example response:
 }
 ```
 
-### Summarize saved task
+### Optional Gemini setup
+No real API key is committed to this repository.
+
+To enable real Gemini responses:
 ```bash
-curl -X POST http://localhost:8081/tasks/1/summarize
+export GEMINI_API_KEY="your_gemini_api_key_here"
+export GEMINI_MODEL="gemini-2.5-flash-lite"
+./mvnw spring-boot:run
 ```
 
-### Break down saved task
-```bash
-curl -X POST http://localhost:8081/tasks/1/breakdown
-```
+Notes:
+- `GEMINI_MODEL` is optional.
+- If you do not configure `GEMINI_API_KEY`, the app still runs.
 
-## 13. Simple UI
-Open: `http://localhost:8081`
+### Fallback behavior
+- If `GEMINI_API_KEY` is missing, invalid, quota-limited, or Gemini fails, the app uses `LocalFallbackAiClient`.
+- AI suggestions are not automatically saved to the database.
 
-The UI supports:
-- Viewing all tasks
-- Creating a task
-- Deleting a task
-- AI task suggestion from prompt
-- AI summarize by task ID
-- AI breakdown by task ID
+Additional AI endpoints:
+- `POST /tasks/{id}/summarize`
+- `POST /tasks/{id}/breakdown`
 
-## 14. Testing Summary
-- `TaskServiceTest` (unit tests, Mockito, no full Spring context)
-  - Happy paths for:
-    - `createTask`
-    - `getAllTasks`
-    - `getTaskById`
-    - `updateTask`
-    - `deleteTask`
-- `TaskControllerIntegrationTest` (Spring context + MockMvc)
-  - End-to-end coverage for all CRUD endpoints
-- `AiTaskControllerTest`
-  - AI endpoint behavior with mocked service
-  - No real Gemini call in controller tests
-- `GeminiAiClientTest`
-  - Validates fallback behavior without requiring real provider access
+## 5. CRUD API Endpoints
+- `POST /tasks`
+- `GET /tasks`
+- `GET /tasks/{id}`
+- `PUT /tasks/{id}`
+- `DELETE /tasks/{id}`
 
-## 15. AI Design Notes
-- AI behavior is isolated behind `AiClient` for clean abstraction and testability.
-- `GeminiAiClient` is used when configured and provider calls succeed.
-- `LocalFallbackAiClient` keeps the app runnable without secrets or external AI availability.
-- AI responses are stateless and **not persisted** automatically.
-  - Data is saved only when calling `POST /tasks`.
-- If AI returns a past `dueDate` for task suggestion, it is normalized to `null`.
+## 6. H2 Console
+- URL: `http://localhost:8081/h2-console`
+- JDBC URL: `jdbc:h2:mem:taskdb`
+- Username: `sa`
+- Password: blank
 
-## 16. Future Improvements
-- Add pagination and filtering for large task lists
-- Add sorting options (due date, priority, status)
+## 7. Simple UI
+- URL: `http://localhost:8081`
+- Capabilities:
+  - View tasks
+  - Create tasks
+  - Delete tasks
+  - AI task suggestion
+  - AI task summary by task ID
+  - AI task breakdown by task ID
+
+## 8. Testing Summary
+- Unit tests for `TaskService` happy paths:
+  - `createTask`
+  - `getAllTasks`
+  - `getTaskById`
+  - `updateTask`
+  - `deleteTask`
+- CRUD integration tests with Spring context + MockMvc:
+  - `POST /tasks`
+  - `GET /tasks`
+  - `GET /tasks/{id}`
+  - `PUT /tasks/{id}`
+  - `DELETE /tasks/{id}`
+- AI controller tests mock AI dependency, so tests do not call real Gemini.
+
+## 9. AI Collaboration Notes
+AI was used to help design, implement, review, debug, and test the project in incremental steps:
+- layered architecture (controller/service/repository)
+- DTO mapping and validation
+- exception handling
+- AI integration design with fallback
+- test coverage and review readiness
+
+## 10. Future Improvements
+- Add pagination/filtering for large task lists
 - Add authentication/authorization
-- Add CI workflow and code quality gates
+- Add CI workflow and quality checks
 - Add containerization for deployment environments
